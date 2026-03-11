@@ -45,7 +45,12 @@ async def search_usda(query: str) -> List[CaffeineLookupResult]:
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
         resp = await client.get(
             USDA_URL,
-            params={"query": query, "api_key": USDA_API_KEY, "pageSize": 5},
+            params={
+                "query": query,
+                "api_key": USDA_API_KEY,
+                "pageSize": 5,
+                "dataType": "SR Legacy,Survey (FNDDS)",
+            },
         )
         resp.raise_for_status()
         data = resp.json()
