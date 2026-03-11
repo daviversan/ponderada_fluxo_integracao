@@ -12,8 +12,8 @@ OPEN_FOOD_FACTS_URL = "https://world.openfoodfacts.org/cgi/search.pl"
 USDA_URL = "https://api.nal.usda.gov/fdc/v1/foods/search"
 USDA_API_KEY = os.getenv("USDA_API_KEY", "DEMO_KEY")
 
-CAFFEINE_NUTRIENT_ID = 262
-REQUEST_TIMEOUT = 5.0
+CAFFEINE_NUTRIENT_ID = 1057
+REQUEST_TIMEOUT = 10.0
 
 
 async def search_open_food_facts(query: str) -> List[CaffeineLookupResult]:
