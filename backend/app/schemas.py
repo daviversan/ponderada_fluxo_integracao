@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field
 
 
 class Currency(str, Enum):
@@ -38,3 +38,9 @@ class CaffeineLookupResult(BaseModel):
     name: str
     caffeine_mg: Optional[int] = None
     source: str
+
+
+class ErrorResponse(BaseModel):
+    detail: str
+    status_code: int
+    request_id: Optional[str] = None

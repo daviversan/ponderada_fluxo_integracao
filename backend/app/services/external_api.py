@@ -1,9 +1,12 @@
 import os
+import logging
 from typing import List
 
 import httpx
 
 from app.schemas import CaffeineLookupResult
+
+logger = logging.getLogger(__name__)
 
 OPEN_FOOD_FACTS_URL = "https://world.openfoodfacts.org/cgi/search.pl"
 USDA_URL = "https://api.nal.usda.gov/fdc/v1/foods/search"
@@ -61,15 +64,34 @@ async def search_usda(query: str) -> List[CaffeineLookupResult]:
 
 
 async def lookup_caffeine(query: str) -> List[CaffeineLookupResult]:
-    """Try Open Food Facts first, fall back to USDA on failure."""
+    """Try Open Food Facts first, fall back to USDA on failure or empty results."""
+    logger.info("Caffeine lookup for %r — trying Open Food Facts", query)
     try:
         results = await search_open_food_facts(query)
         if results:
+            logger.info(
+                "Open Food Facts returned %d result(s) for %r", len(results), query
+            )
             return results
-    except (httpx.HTTPError, Exception):
-        pass
+        logger.info("Open Food Facts returned 0 results for %r, falling back to USDA", query)
+    except httpx.TimeoutException:
+        logger.warning("Open Food Facts timed out (%.1fs) for %r, falling back to USDA", REQUEST_TIMEOUT, query)
+    except httpx.HTTPStatusError as exc:
+        logger.warning("Open Food Facts HTTP %d for %r, falling back to USDA", exc.response.status_code, query)
+    except Exception as exc:
+        logger.warning("Open Food Facts error for %r: %s, falling back to USDA", query, exc)
 
+    logger.info("Trying USDA fallback for %r", query)
     try:
-        return await search_usda(query)
-    except (httpx.HTTPError, Exception):
-        return []
+        results = await search_usda(query)
+        logger.info("USDA returned %d result(s) for %r", len(results), query)
+        return results
+    except httpx.TimeoutException:
+        logger.warning("USDA timed out (%.1fs) for %r", REQUEST_TIMEOUT, query)
+    except httpx.HTTPStatusError as exc:
+        logger.warning("USDA HTTP %d for %r", exc.response.status_code, query)
+    except Exception as exc:
+        logger.warning("USDA error for %r: %s", query, exc)
+
+    logger.warning("All external sources failed for %r, returning empty", query)
+    return []
